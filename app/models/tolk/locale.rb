@@ -16,6 +16,7 @@ module Tolk
     has_many :translations, :class_name => 'Tolk::Translation', :dependent => :destroy
 
     accepts_nested_attributes_for :translations, :reject_if => proc { |attributes| attributes['text'].blank? }
+
     before_validation :remove_invalid_translations_from_target, :on => :update
 
     attr_accessible :name
@@ -69,9 +70,10 @@ module Tolk
 
       # http://cldr.unicode.org/index/cldr-spec/plural-rules - TODO: usage of 'none' isn't standard-conform
       PLURALIZATION_KEYS = ['none', 'zero', 'one', 'two', 'few', 'many', 'other']
+
       def pluralization_data?(data)
         keys = data.keys.map(&:to_s)
-        keys.all? {|k| PLURALIZATION_KEYS.include?(k) }
+        keys.all? { |k| PLURALIZATION_KEYS.include?(k) }
       end
     end
 
@@ -109,17 +111,16 @@ module Tolk
       return [] unless query.present? || key_query.present?
 
       translations = case scope
-      when :origin
-        Tolk::Locale.primary_locale.translations.containing_text(query)
-      else # :target
-        self.translations.containing_text(query)
-      end
+                       when :origin
+                         Tolk::Locale.primary_locale.translations.containing_text(query)
+                       else # :target
+                         self.translations.containing_text(query)
+                     end
+      phrases = Tolk::Phrase.all.order_by(key: :asc)
+      phrases = phrases.containing_text(key_query) if key_query.present?
 
-      phrases = Tolk::Phrase.scoped(:order => 'tolk_phrases.key ASC')
-      phrases = phrases.containing_text(key_query)
-
-      phrases = phrases.scoped(:conditions => ['tolk_phrases.id IN(?)', translations.map(&:phrase_id).uniq])
-      phrases.page({:page => page}.merge(options))
+      phrases = phrases.any_in(id: translations.map(&:phrase_id).uniq)
+      phrases.page(page)
     end
 
     def search_phrases_without_translation(query, page = nil, options = {})
@@ -137,13 +138,13 @@ module Tolk
     end
 
     def to_hash
-      { name => translations.each_with_object({}) do |translation, locale|
+      {name => translations.each_with_object({}) do |translation, locale|
         if translation.phrase.key.include?(".")
           locale.deep_merge!(unsquish(translation.phrase.key, translation.value))
         else
           locale[translation.phrase.key] = translation.value
         end
-      end }
+      end}
     end
 
     def to_param
@@ -166,17 +167,16 @@ module Tolk
     end
 
     def translations_with_html
-      translations = self.translations.all(:conditions => "tolk_translations.text LIKE '%>%' AND
-        tolk_translations.text LIKE '%<%' AND tolk_phrases.key NOT LIKE '%_html'", :joins => :phrase)
-      ActiveRecord::Associations::Preloader.new translations, :phrase
-      translations
+      translations = self.translations.where({text: /.*>|<.*/, })
+      #translations = self.translations.all(:conditions => "tolk_translations.text LIKE '%>%' AND
+      #  tolk_translations.text LIKE '%<%' AND tolk_phrases.key NOT LIKE '%_html'", :joins => :phrase)
     end
 
     def self.rename(old_name, new_name)
       if old_name.blank? || new_name.blank?
         "You need to provide both names, aborting."
       else
-        if locale = find_by_name(old_name)
+        if locale = find_by(name: old_name)
           locale.name = new_name
           locale.save
           "Locale ' #{old_name}' was renamed '#{new_name}'"
@@ -185,13 +185,13 @@ module Tolk
         end
       end
     end
-    
+
     private
 
 
     def remove_invalid_translations_from_target
       self.translations.target.dup.each do |t|
-         unless t.valid?
+        unless t.valid?
           self.translations.target.delete(t)
         else
           t.updated_at = Time.current # Silly hax to fool autosave into saving the record
@@ -202,15 +202,11 @@ module Tolk
     end
 
     def find_phrases_with_translations(page, conditions = {})
-      result = Tolk::Phrase.page(:page => page,
-        :conditions => { :'tolk_translations.locale_id' => self.id }.merge(conditions),
-        :joins => :translations, :order => 'tolk_phrases.key ASC')
+      result = Tolk::Phrase.where("translations.locale_id" => self.id).page(page)
 
       result.each do |phrase|
         phrase.translation = phrase.translations.for(self)
       end
-
-      ActiveRecord::Associations::Preloader.new result, :translations
 
       result
     end
@@ -219,11 +215,11 @@ module Tolk
       if string.is_a?(String)
         unsquish(string.split("."), value)
       elsif string.size == 1
-        { string.first => value }
+        {string.first => value}
       else
-        key  = string[0]
+        key = string[0]
         rest = string[1..-1]
-        { key => unsquish(rest, value) }
+        {key => unsquish(rest, value)}
       end
     end
   end

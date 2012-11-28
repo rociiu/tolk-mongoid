@@ -7,7 +7,7 @@ module Tolk
     field :primary_updated, type: Boolean, default: false
     field :previous_text, type: String
 
-    scope :containing_text, lambda {|query| where("tolk_translations.text LIKE ?", "%#{query}%") }
+    scope :containing_text, lambda {|query| self.any_of(text: Regexp.new(".*#{query}.*")) }
 
     validates_presence_of :text, :if => proc {|r| r.primary.blank? && !r.explicit_nil && !r.boolean?}
     validate :check_matching_variables, :if => proc { |tr| tr.primary_translation.present? }
@@ -16,6 +16,7 @@ module Tolk
 
     belongs_to :phrase, :class_name => 'Tolk::Phrase'
     belongs_to :locale, :class_name => 'Tolk::Locale'
+
     validates_presence_of :locale_id
 
     attr_accessible :phrase_id, :locale_id, :text, :primary_updated, :previous_text, :locale, :phrase

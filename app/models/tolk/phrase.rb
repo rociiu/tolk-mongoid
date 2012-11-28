@@ -24,8 +24,6 @@ module Tolk
 
     attr_accessor :translation
 
-    scope :containing_text, lambda { |query|
-      { :conditions => ["tolk_phrases.key LIKE ?", "%#{query}%"] }
-    }
+    scope :containing_text, lambda { |query| self.any_of(text: Regexp.new(".*#{query}.*")) }
   end
 end
