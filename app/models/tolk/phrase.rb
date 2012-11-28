@@ -1,8 +1,11 @@
 module Tolk
-  class Phrase < ActiveRecord::Base
-    self.table_name = "tolk_phrases"
+  class Phrase
+    include Mongoid::Document
+    include Mongoid::Timestamps
 
     attr_accessible :key
+
+    field :key, type: String
 
     validates_uniqueness_of :key
 

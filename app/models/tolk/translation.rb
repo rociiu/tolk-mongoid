@@ -1,11 +1,14 @@
 module Tolk
-  class Translation < ActiveRecord::Base
-    self.table_name = "tolk_translations"
+  class Translation
+    include Mongoid::Document
+    include Mongoid::Timestamps
+
+    field :text, type: String
+    field :primary_updated, type: Boolean, default: false
+    field :previous_text, type: String
 
     scope :containing_text, lambda {|query| where("tolk_translations.text LIKE ?", "%#{query}%") }
 
-    serialize :text
-    serialize :previous_text
     validates_presence_of :text, :if => proc {|r| r.primary.blank? && !r.explicit_nil && !r.boolean?}
     validate :check_matching_variables, :if => proc { |tr| tr.primary_translation.present? }
 

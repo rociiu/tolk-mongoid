@@ -9,7 +9,6 @@ namespace :tolk do
   task :setup => :environment do
     system 'rails g tolk:install'
 
-    Rake::Task['db:migrate'].invoke
     Rake::Task['tolk:sync'].invoke
     Rake::Task['tolk:import'].invoke
   end

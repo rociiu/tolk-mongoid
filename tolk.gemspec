@@ -2,17 +2,17 @@
 require File.expand_path('../lib/tolk/version', __FILE__)
 
 Gem::Specification.new do |s|
-  s.name        = 'tolk'
+  s.name        = 'tolk-mongoid'
   s.version     = Tolk::VERSION
   s.summary     = 'Rails engine providing web interface for managing i18n yaml files'
   s.description = 'Tolk is a web interface for doing i18n translations packaged as an engine for Rails applications.'
 
-  s.authors = ['David Heinemeier Hansson', 'Piotr Sarnacki', 'Emilio Tagua', 'Thomas Darde']
-  s.email = 'david@loudthinking.com'
-  s.homepage = 'http://github.com/tolk/tolk'
+  s.authors = ['David Heinemeier Hansson', 'Piotr Sarnacki', 'Emilio Tagua', 'Thomas Darde', 'Michael Johann']
+  s.email = 'mjohann@rails-experts.com'
+  s.homepage = 'http://github.com/econovum/tolk-mongoid'
 
   s.platform = Gem::Platform::RUBY
-  s.add_dependency('will_paginate')
+  s.add_dependency('kaminari')
   s.add_dependency('ya2yaml', '~> 0.26')
 
   if File.exists?('UPGRADING')
