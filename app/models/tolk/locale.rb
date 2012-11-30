@@ -8,11 +8,11 @@ module Tolk
     field :name, type: String
 
     def self._dump_path
-      # Necessary to acces rails.root at runtime !
+      # Necessary to access rails.root at runtime !
       @dump_path ||= Tolk.config.dump_path.is_a?(Proc) ? instance_eval(&Tolk.config.dump_path) : Tolk.config.dump_path
     end
 
-    has_many :phrases, :as => :translations, :class_name => 'Tolk::Phrase'
+    has_many :phrases, :class_name => 'Tolk::Phrase'
     has_many :translations, :class_name => 'Tolk::Translation', :dependent => :destroy
 
     accepts_nested_attributes_for :translations, :reject_if => proc { |attributes| attributes['text'].blank? }
@@ -21,9 +21,11 @@ module Tolk
 
     attr_accessible :name
     cattr_accessor :locales_config_path
+
     self.locales_config_path = self._dump_path
 
     cattr_accessor :primary_locale_name
+
     self.primary_locale_name = I18n.default_locale.to_s
 
     include Tolk::Sync
@@ -82,6 +84,11 @@ module Tolk
       #translations.count(:conditions => {:'tolk_translations.primary_updated' => true}) > 0
     end
 
+    def count_updated_translations
+      translations.where(primary_updated: true).count
+      #translations.count(:conditions => {:'tolk_translations.primary_updated' => true}) > 0
+    end
+
     def phrases_with_translation(page = nil)
       find_phrases_with_translations(page, primary_updated: false)
       #find_phrases_with_translations(page, :'tolk_translations.primary_updated' => false)
@@ -117,7 +124,7 @@ module Tolk
                          self.translations.containing_text(query)
                      end
       phrases = Tolk::Phrase.all.order_by(key: :asc)
-      phrases = phrases.containing_text(key_query) if key_query.present?
+      phrases = phrases.containing_key(key_query) if key_query.present?
 
       phrases = phrases.any_in(id: translations.map(&:phrase_id).uniq)
       phrases.page(page)
@@ -160,7 +167,7 @@ module Tolk
     end
 
     def get(key)
-      if phrase = Tolk::Phrase.find_by(key: key)
+      if (phrase = Tolk::Phrase.find_by(key: key))
         t = self.translations.where(:phrase_id => phrase.id).first
         t.text if t
       end
@@ -176,7 +183,7 @@ module Tolk
       if old_name.blank? || new_name.blank?
         "You need to provide both names, aborting."
       else
-        if locale = find_by(name: old_name)
+        if (locale = find_by(name: old_name))
           locale.name = new_name
           locale.save
           "Locale ' #{old_name}' was renamed '#{new_name}'"
@@ -191,10 +198,10 @@ module Tolk
 
     def remove_invalid_translations_from_target
       self.translations.target.dup.each do |t|
-        unless t.valid?
-          self.translations.target.delete(t)
-        else
+        if t.valid?
           t.updated_at = Time.current # Silly hax to fool autosave into saving the record
+        else
+          self.translations.target.delete(t)
         end
       end
 

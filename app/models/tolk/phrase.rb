@@ -25,5 +25,6 @@ module Tolk
     attr_accessor :translation
 
     scope :containing_text, lambda { |query| self.any_of(text: Regexp.new(".*#{query}.*")) }
+    scope :containing_key, lambda { |query| self.any_of(key: Regexp.new(".*#{query}.*")) }
   end
 end

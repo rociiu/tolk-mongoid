@@ -6,7 +6,7 @@
     (#{link_to 'See completed translations', tolk.all_locale_path(@locale)})
 - if @locale.has_updated_translations? && action_name != 'updated'
   %span.notice
-    Some phrases have changed. #{link_to "Update translations", tolk.updated_locale_path(@locale)}.
+    #{@locale.count_updated_translations} phrases have changed. #{link_to "Update translations", tolk.updated_locale_path(@locale)}.
 .search
   = render :partial => "tolk/searches/form", :locals => { :locale => @locale }
 .translations
