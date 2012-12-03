@@ -124,7 +124,7 @@ module Tolk
                          self.translations.containing_text(query)
                      end
       phrases = Tolk::Phrase.all.order_by(key: :asc)
-      phrases = phrases.containing_key(key_query) if key_query.present?
+      phrases = phrases.containing_key (key_query) if key_query.present?
 
       phrases = phrases.any_in(id: translations.map(&:phrase_id).uniq)
       phrases.page(page)
