@@ -154,7 +154,7 @@ module Tolk
     def check_matching_variables
       unless variables_match?
         if primary_translation.variables.empty?
-          self.errors.add(:variables, "The primary translation does not contain substitutions, so this should neither.")
+          self.errors.add(:variables, "The primary translation does not contain substitutions, so this should neither. #{primary_translation.text}")
         else
           self.errors.add(:variables, "The translation should contain the substitutions of the primary translation: (#{primary_translation.variables.to_a.join(', ')}), found (#{self.variables.to_a.join(', ')}).")
         end
